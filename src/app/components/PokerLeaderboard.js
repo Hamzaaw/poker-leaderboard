@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 
-const initialPlayers = [
+const defaultPlayers = [
   { name: "Hamza", score: 17, img: "/h.png" },
   { name: "Muhammad", score: 12, img: "/m.png" },
   { name: "Reahan", score: 7, img: "/r.png" },
@@ -12,20 +12,28 @@ const initialPlayers = [
 ];
 
 export default function PokerLeaderboard() {
-  const [players, setPlayers] = useState(initialPlayers);
+  const [players, setPlayers] = useState(defaultPlayers);
   const [secretPhrase, setSecretPhrase] = useState("");
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [showSecret, setShowSecret] = useState(false);
-  const correctPhrase = "oreo";
+  const correctPhrase = "hi_abdullah";
+
+  // Load from localStorage on first mount
+  useEffect(() => {
+    const savedPlayers = localStorage.getItem("pokerPlayers");
+    if (savedPlayers) {
+      setPlayers(JSON.parse(savedPlayers));
+    }
+  }, []);
 
   const handleAuth = (e) => {
-    e.preventDefault(); // Prevent default form submission behavior
+    e.preventDefault();
     if (secretPhrase.trim() === correctPhrase) {
       setIsAuthorized(true);
     } else {
       alert("Incorrect secret phrase!");
     }
-    setSecretPhrase(""); // Reset password field
+    setSecretPhrase("");
   };
 
   const handleLogout = () => {
@@ -34,11 +42,11 @@ export default function PokerLeaderboard() {
   };
 
   const updateScore = (index, newScore) => {
-    setPlayers((prev) =>
-      prev.map((player, i) =>
-        i === index ? { ...player, score: parseInt(newScore) || 0 } : player
-      )
+    const updated = players.map((player, i) =>
+      i === index ? { ...player, score: parseInt(newScore) || 0 } : player
     );
+    setPlayers(updated);
+    localStorage.setItem("pokerPlayers", JSON.stringify(updated));
   };
 
   return (
@@ -70,7 +78,7 @@ export default function PokerLeaderboard() {
                     <Image
                       src={player.img}
                       alt={player.name}
-                      width={60} // Adjusted for mobile
+                      width={60}
                       height={60}
                       className="w-14 h-14 md:w-20 md:h-20 rounded-full border-4 border-yellow-400 shadow-lg"
                     />
@@ -94,7 +102,6 @@ export default function PokerLeaderboard() {
         </table>
       </div>
 
-      {/* Secret Phrase Section */}
       {!isAuthorized ? (
         <div className="w-full max-w-md bg-gray-800 p-4 md:p-6 rounded-lg shadow-lg space-y-4">
           <h2 className="text-xl md:text-2xl font-bold text-yellow-300 text-center">Enter Secret Phrase</h2>
@@ -107,7 +114,7 @@ export default function PokerLeaderboard() {
                 className="text-white bg-gray-700 p-2 rounded-md w-full border-2 border-yellow-400"
                 onChange={(e) => setSecretPhrase(e.target.value)}
               />
-              <button 
+              <button
                 type="button"
                 onClick={() => setShowSecret(!showSecret)}
                 className="bg-gray-600 hover:bg-gray-700 text-white px-3 md:px-4 py-2 rounded-md"
