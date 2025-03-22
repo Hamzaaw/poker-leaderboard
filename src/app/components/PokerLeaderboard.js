@@ -4,6 +4,10 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 
+const BIN_ID = "67decdb38a456b79667aa372";
+const API_KEY = "$2a$10$WRK8uCAe4OrgEaf8py7weuymqtmS9C0VK9/4AcjK23TB7IJn1XqIW"; // 🔐 Replace this with your jsonbin.io secret key
+const BIN_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+
 const defaultPlayers = [
   { name: "Hamza", score: 17, img: "/h.png" },
   { name: "Muhammad", score: 12, img: "/m.png" },
@@ -18,12 +22,22 @@ export default function PokerLeaderboard() {
   const [showSecret, setShowSecret] = useState(false);
   const correctPhrase = "hi_abdullah";
 
-  // Load from localStorage on first mount
+  // Load from jsonbin.io on mount
   useEffect(() => {
-    const savedPlayers = localStorage.getItem("pokerPlayers");
-    if (savedPlayers) {
-      setPlayers(JSON.parse(savedPlayers));
-    }
+    fetch(BIN_URL, {
+      headers: {
+        "X-Master-Key": API_KEY,
+      },
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.record) {
+          setPlayers(data.record);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to fetch players:", err);
+      });
   }, []);
 
   const handleAuth = (e) => {
@@ -41,12 +55,24 @@ export default function PokerLeaderboard() {
     setSecretPhrase("");
   };
 
-  const updateScore = (index, newScore) => {
+  const updateScore = async (index, newScore) => {
     const updated = players.map((player, i) =>
       i === index ? { ...player, score: parseInt(newScore) || 0 } : player
     );
     setPlayers(updated);
-    localStorage.setItem("pokerPlayers", JSON.stringify(updated));
+
+    try {
+      await fetch(BIN_URL, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Master-Key": API_KEY,
+        },
+        body: JSON.stringify(updated),
+      });
+    } catch (err) {
+      console.error("Failed to update players:", err);
+    }
   };
 
   return (
